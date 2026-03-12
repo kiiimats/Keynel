@@ -17,18 +17,14 @@ call bun run build
 if not %errorlevel% == 0 goto error
 cd ..
 
-:: dashboard/build -> server/dashboard_dist にコピー（go:embed用）
 if exist server\dashboard_dist rmdir /s /q server\dashboard_dist
 xcopy /e /i /q dashboard\build server\dashboard_dist
 if not %errorlevel% == 0 goto error
-echo OK: server\dashboard_dist
+echo OK: dashboard embedded
 echo.
 
-set GOOS=
-set GOARCH=
-
 :: ---- Server (Linux amd64) ----
-echo [1/4] Building server for Linux...
+echo [1/4] Building server...
 set GOOS=linux
 set GOARCH=amd64
 go build -trimpath -ldflags="-s -w" -o bin\server ./server/
@@ -68,7 +64,6 @@ set GOARCH=
 
 echo ========================================
 echo   Build complete!
-echo.
 echo   bin\server             -> Ubuntu server (dashboard embedded)
 echo   bin\client-windows.exe -> Windows
 echo   bin\client-mac         -> Mac
