@@ -14,8 +14,3 @@ export interface ServerStatus {
   active_conns: number;
   banned_ips: number;
 }
-
-export interface SSEInitData {
-  tunnels: Tunnel[];
-  client_connected: boolean;
-}

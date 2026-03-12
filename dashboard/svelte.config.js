@@ -1,9 +1,11 @@
-import adapter from '@sveltejs/adapter-cloudflare';
+import adapter from '@sveltejs/adapter-static';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
   kit: {
-    adapter: adapter(),
+    adapter: adapter({
+      fallback: '404.html',
+    }),
     alias: {
       $lib: './src/lib',
     },
