@@ -51,7 +51,7 @@
 
   <div class="relative w-full max-w-sm">
     <div class="mb-10 text-center">
-      <div class="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl border border-zinc-700/60 bg-zinc-900 text-2xl shadow-lg shadow-black/40">
+      <div class="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl border border-zinc-700/60 bg-zinc-900 text-2xl shadow-lg shadow-black/40 text-white">
         ⬡
       </div>
       <h1 class="text-xl font-semibold tracking-tight text-white">Keynel</h1>
@@ -68,7 +68,7 @@
             type="text"
             bind:value={serverUrl}
             on:keydown={onKey}
-            placeholder="220.158.19.132"
+            placeholder="127.0.0.1"
             autocomplete="off"
             class="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3.5 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-all focus:border-zinc-500 focus:ring-2 focus:ring-zinc-500/20"
           />
