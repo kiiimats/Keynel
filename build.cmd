@@ -8,6 +8,22 @@ echo.
 
 if not exist bin mkdir bin
 
+:: ---- Dashboard build ----
+echo [0/4] Building dashboard...
+cd dashboard
+call bun install --frozen-lockfile
+if not %errorlevel% == 0 goto error
+call bun run build
+if not %errorlevel% == 0 goto error
+cd ..
+
+:: dashboard/build -> server/dashboard_dist にコピー（go:embed用）
+if exist server\dashboard_dist rmdir /s /q server\dashboard_dist
+xcopy /e /i /q dashboard\build server\dashboard_dist
+if not %errorlevel% == 0 goto error
+echo OK: server\dashboard_dist
+echo.
+
 set GOOS=
 set GOARCH=
 
@@ -53,7 +69,7 @@ set GOARCH=
 echo ========================================
 echo   Build complete!
 echo.
-echo   bin\server             -> Ubuntu server
+echo   bin\server             -> Ubuntu server (dashboard embedded)
 echo   bin\client-windows.exe -> Windows
 echo   bin\client-mac         -> Mac
 echo   bin\client-linux       -> Linux
@@ -65,6 +81,6 @@ exit /b 0
 set GOOS=
 set GOARCH=
 echo.
-echo FAILED. Make sure Go is installed: https://go.dev/dl/
+echo FAILED.
 pause
 exit /b 1

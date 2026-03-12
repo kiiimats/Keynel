@@ -1,2 +1,8 @@
 bin/
+keynel.json
+keynel.key
 *.exe
+server/dashboard_dist/
+dashboard/build/
+dashboard/.svelte-kit/
+dashboard/node_modules/

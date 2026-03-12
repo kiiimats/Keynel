@@ -2,9 +2,11 @@ package main
 
 import (
 	"crypto/rand"
+	"embed"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/fs"
 	"keynel/common"
 	"log"
 	"net"
@@ -14,6 +16,9 @@ import (
 	"sync"
 	"time"
 )
+
+//go:embed all:dashboard_dist
+var dashboardFS embed.FS
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Keynel Server
@@ -711,14 +716,37 @@ func (s *Server) handleData(conn net.Conn) {
 func (s *Server) serveMgmt() {
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/api/status", s.handleStatus)
-	mux.HandleFunc("/api/tunnels", s.handleTunnels)
-	mux.HandleFunc("/api/tunnels/", s.handleTunnelByID)
-	mux.HandleFunc("/api/events", s.handleSSE)
+	// API（認証必要）
+	apiMux := http.NewServeMux()
+	apiMux.HandleFunc("/api/status", s.handleStatus)
+	apiMux.HandleFunc("/api/tunnels", s.handleTunnels)
+	apiMux.HandleFunc("/api/tunnels/", s.handleTunnelByID)
+	apiMux.HandleFunc("/api/events", s.handleSSE)
+	mux.Handle("/api/", s.authMiddleware(apiMux))
+
+	// ダッシュボード静的ファイル配信（embed）
+	sub, err := fs.Sub(dashboardFS, "dashboard_dist")
+	if err != nil {
+		log.Fatalf("[mgmt] embed失敗: %v", err)
+	}
+	fileServer := http.FileServer(http.FS(sub))
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		// ファイルが存在しない場合は SPA フォールバック
+		f, err := sub.Open(strings.TrimPrefix(r.URL.Path, "/"))
+		if err != nil {
+			r2 := *r
+			r2.URL.Path = "/"
+			fileServer.ServeHTTP(w, &r2)
+			return
+		}
+		f.Close()
+		fileServer.ServeHTTP(w, r)
+	})
+	log.Printf("[mgmt] ダッシュボード配信: embed")
 
 	addr := fmt.Sprintf(":%d", s.mgmtPort)
 	log.Printf("[mgmt] 管理API起動: %s", addr)
-	if err := http.ListenAndServe(addr, corsMiddleware(s.authMiddleware(mux))); err != nil {
+	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatalf("[mgmt] HTTP起動失敗: %v", err)
 	}
 }
