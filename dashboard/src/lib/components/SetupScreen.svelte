@@ -15,21 +15,25 @@
     return url;
   }
 
+  // プロキシ経由で接続テスト（Mixed Content 回避）
+  function proxyUrl(target: string, path: string): string {
+    const params = new URLSearchParams({ target, key: apiKey, path });
+    return `/proxy?${params.toString()}`;
+  }
+
   async function connect() {
     error = '';
     if (!serverUrl || !apiKey) return;
     testing = true;
     try {
-      const url = normalizeUrl(serverUrl);
-      const res = await fetch(`${url}/api/status`, {
-        headers: { 'X-API-Key': apiKey },
-      });
+      const target = normalizeUrl(serverUrl);
+      const res = await fetch(proxyUrl(target, '/api/status'));
       if (!res.ok) throw new Error(`HTTP ${res.status} — APIキーが違います`);
-      dispatch('connect', { serverUrl: url, apiKey });
+      dispatch('connect', { serverUrl: target, apiKey });
     } catch (e: any) {
       const msg: string = e.message ?? '';
-      if (msg.includes('Failed to fetch') || msg.includes('ERR_CONNECTION') || msg.includes('TIMED_OUT')) {
-        error = 'サーバーに到達できません。ufw で 7002/tcp を開けてください。';
+      if (msg.includes('Failed to fetch') || msg.includes('502')) {
+        error = 'サーバーに到達できません。IPアドレスと ufw 7002/tcp を確認してください。';
       } else {
         error = msg || '接続できませんでした';
       }
@@ -41,7 +45,6 @@
     if (e.key === 'Enter') connect();
   }
 
-  // 入力中にリアルタイムでプレビュー表示
   $: preview = serverUrl ? normalizeUrl(serverUrl) : '';
 </script>
 
@@ -51,7 +54,7 @@
 
   <div class="relative w-full max-w-sm">
     <div class="mb-10 text-center">
-      <div class="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl border border-zinc-700/60 bg-zinc-900 text-2xl shadow-lg shadow-black/40 text-white">
+      <div class="mb-3 inline-flex h-12 w-12 items-center justify-center rounded-xl border border-zinc-700/60 bg-zinc-900 text-2xl shadow-lg shadow-black/40">
         ⬡
       </div>
       <h1 class="text-xl font-semibold tracking-tight text-white">Keynel</h1>
@@ -61,14 +64,12 @@
     <div class="rounded-2xl border border-zinc-800/80 bg-zinc-900/80 p-6 shadow-2xl shadow-black/50 backdrop-blur-sm">
       <div class="space-y-4">
         <div class="space-y-1.5">
-          <label class="text-xs font-medium uppercase tracking-widest text-zinc-500">
-            サーバー IP
-          </label>
+          <label class="text-xs font-medium uppercase tracking-widest text-zinc-500">サーバー IP</label>
           <input
             type="text"
             bind:value={serverUrl}
             on:keydown={onKey}
-            placeholder="127.0.0.1"
+            placeholder="220.158.19.132"
             autocomplete="off"
             class="w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3.5 py-2.5 text-sm text-white placeholder-zinc-600 outline-none transition-all focus:border-zinc-500 focus:ring-2 focus:ring-zinc-500/20"
           />
@@ -78,9 +79,7 @@
         </div>
 
         <div class="space-y-1.5">
-          <label class="text-xs font-medium uppercase tracking-widest text-zinc-500">
-            API キー
-          </label>
+          <label class="text-xs font-medium uppercase tracking-widest text-zinc-500">API キー</label>
           <input
             type="password"
             bind:value={apiKey}

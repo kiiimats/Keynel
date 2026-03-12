@@ -1,15 +1,14 @@
 {
-	"$schema": "./node_modules/wrangler/config-schema.json",
-	"name": "keynel-dashboard",
-	"compatibility_date": "2026-03-11",
-	"compatibility_flags": [
-		"nodejs_als"
-	],
-	"main": ".svelte-kit/cloudflare/_worker.js",
-	"assets": {
-		"binding": "ASSETS",
-		"directory": ".svelte-kit/cloudflare"
-	},
-	"workers_dev": true,
-	"preview_urls": true
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "keynel-dashboard",
+  "compatibility_date": "2026-03-11",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": ".svelte-kit/cloudflare/_worker.js",
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".svelte-kit/cloudflare",
+    "run_worker_first": true,
+  },
+  "workers_dev": true,
+  "preview_urls": true,
 }

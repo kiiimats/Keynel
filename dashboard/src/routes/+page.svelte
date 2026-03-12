@@ -56,7 +56,7 @@
 
   function connectSSE() {
     es?.close();
-    es = new EventSource(api.sseUrl());
+    es = new EventSource(api.sseProxyUrl());
 
     es.addEventListener('init', (e) => {
       const data = JSON.parse(e.data);

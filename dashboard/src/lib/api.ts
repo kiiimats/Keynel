@@ -2,37 +2,45 @@ import type { Tunnel, ServerStatus } from './types';
 
 export class KeynelAPI {
   constructor(
-    private baseUrl: string,
+    private targetUrl: string,
     private apiKey: string
   ) {}
 
-  private headers() {
-    return {
-      'Content-Type': 'application/json',
-      'X-API-Key': this.apiKey,
-    };
+  // target と key をクエリパラメータで渡す
+  private proxyUrl(path: string): string {
+    const params = new URLSearchParams({
+      target: this.targetUrl,
+      key: this.apiKey,
+      path,
+    });
+    return `/proxy?${params.toString()}`;
   }
 
-  private url(path: string) {
-    return `${this.baseUrl}${path}`;
+  private async request(path: string, options: RequestInit = {}): Promise<Response> {
+    return fetch(this.proxyUrl(path), {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(options.headers ?? {}),
+      },
+    });
   }
 
   async getStatus(): Promise<ServerStatus> {
-    const res = await fetch(this.url('/api/status'), { headers: this.headers() });
+    const res = await this.request('/api/status');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json();
   }
 
   async getTunnels(): Promise<Tunnel[]> {
-    const res = await fetch(this.url('/api/tunnels'), { headers: this.headers() });
+    const res = await this.request('/api/tunnels');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     return res.json();
   }
 
   async createTunnel(proto: 'tcp' | 'udp', clientPort: number, serverPort: number): Promise<Tunnel> {
-    const res = await fetch(this.url('/api/tunnels'), {
+    const res = await this.request('/api/tunnels', {
       method: 'POST',
-      headers: this.headers(),
       body: JSON.stringify({ proto, client_port: clientPort, server_port: serverPort }),
     });
     if (!res.ok) {
@@ -43,9 +51,8 @@ export class KeynelAPI {
   }
 
   async patchTunnel(id: string, patch: { enabled: boolean; rate_limit: boolean }): Promise<Tunnel> {
-    const res = await fetch(this.url(`/api/tunnels/${id}`), {
+    const res = await this.request(`/api/tunnels/${id}`, {
       method: 'PATCH',
-      headers: this.headers(),
       body: JSON.stringify(patch),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -53,14 +60,19 @@ export class KeynelAPI {
   }
 
   async deleteTunnel(id: string): Promise<void> {
-    const res = await fetch(this.url(`/api/tunnels/${id}`), {
-      method: 'DELETE',
-      headers: this.headers(),
-    });
+    const res = await this.request(`/api/tunnels/${id}`, { method: 'DELETE' });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
   }
 
-  sseUrl(): string {
-    return `${this.url('/api/events')}?key=${encodeURIComponent(this.apiKey)}`;
+  sseProxyUrl(): string {
+    const params = new URLSearchParams({
+      target: this.targetUrl,
+      key: this.apiKey,
+    });
+    return `/proxy/sse?${params.toString()}`;
+  }
+
+  getTargetUrl(): string {
+    return this.targetUrl;
   }
 }
